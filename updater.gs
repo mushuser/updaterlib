@@ -1,8 +1,3 @@
-/*
-updaterlib.init_project(doc_filename, doc_id, doc_wiki, page_header)
-updaterlib.check_init()
-*/
-
 var DOC_FILENAME;
 var DOC_ID;
 var DOC_WIKI;
@@ -24,7 +19,7 @@ function check_init() {
     (DOC_WIKI == undefined) ||
     (PAGE_HEADER == undefined) 
   ) {
-    Logger.log("check_init() failed, call init_project()")    
+    console.log("check_init() failed, call init_project()")    
   }
 }
 
@@ -34,18 +29,18 @@ function update_doc(wiki, force) {
   var doc_fullrev = get_fullrev()
   var doc_rev = get_docrev(doc_fullrev)
   
-  Logger.log("doc_rev=" + doc_rev)
+  console.log("doc_rev=" + doc_rev)
 
   if( force == undefined ) {
     var reddit_rev = get_redditrev(body)
-    Logger.log("reddit_rev=" + reddit_rev)
+    console.log("reddit_rev=" + reddit_rev)
     
     if(doc_rev <= reddit_rev) {
-      Logger.log("latest rev on reddit, exiting!")
+      console.log("latest rev on reddit, exiting!")
       return        
     }
   } else {
-    Logger.log("force to upload")      
+    console.log("force to upload")      
   }
 
   var pdf_id = save_pdf(DOC_ID, doc_rev)
@@ -55,7 +50,7 @@ function update_doc(wiki, force) {
   
   if( links.length < 1 ) {
     var msg = "all uploads failed!"
-    Logger.log(msg)
+    console.log(msg)
     throw msg
   }
   
@@ -113,7 +108,7 @@ function upload(pdf_id) {
     try {
       var link = uploads[i](pdf_id)
     } catch(e) {
-      Logger.log(e)
+      console.log(e)
       ;;  
     }
     if( link == undefined ) {
@@ -197,7 +192,7 @@ function transfersh_upload(id) {
   if( result == undefined ) {
     return undefined
   } else {
-    Logger.log(result)
+    console.log(result)
     return result
   }
 }
@@ -216,7 +211,7 @@ function anonfilecom_upload(id) {
   } else {  
     var json = JSON.parse(result)
     var link = json.data.file.url.short
-    Logger.log(link)
+    console.log(link)
     return link
   }    
 }
@@ -231,7 +226,7 @@ function fileio_upload(id) {
   } else {
     var json = JSON.parse(result)
     var link = json.link
-    Logger.log(link)
+    console.log(link)
     return link
   }    
 }
@@ -246,7 +241,7 @@ function uploadfilesio_upload(id) {
   } else {
     var json = JSON.parse(result)
     var link = json.url
-    Logger.log(link)
+    console.log(link)
     return link    
   }
 }
