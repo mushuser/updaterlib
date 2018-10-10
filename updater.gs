@@ -23,8 +23,8 @@ function check_init() {
   }
 }
 
-function update_doc(wiki, force) {
 
+function update_doc(wiki, force) {
   var body = redditlib.get_page(wiki)
   var doc_fullrev = get_fullrev()
   var doc_rev = get_docrev(doc_fullrev)
@@ -59,10 +59,26 @@ function update_doc(wiki, force) {
   var result = redditlib.update_wiki(wiki, newbody)
 }
 
+
+function get_datestr() {
+  var now = new Date()
+
+  
+  var day = now.getDate();
+  var month = now.getMonth() + 1;
+  var year = now.getFullYear();
+  
+  var result = year + "-" + ((month<10)?"0":"") + month + "-" + ((day<10)?"0":"") + day
+
+  return result  
+}
+
+
 function get_docrev(fullrev) {
   var rev = fullrev.match(/\[(\d+)\]/)[1]
   return rev
 }
+
 
 function get_fullrev() {
   var doc = DocumentApp.openById(DOC_ID)
@@ -82,6 +98,11 @@ function get_fullrev() {
   return fullrev
 }
 
+
+function get_guiderev(fullrev) {
+  var rev = fullrev.match(/\[(\d+)\]/)[1]
+  return rev
+}
 
 
 function get_redditrev(body) {
@@ -146,7 +167,6 @@ function get_revdes(DOC_ID) {
 }
 
 
-
 function save_pdf(id, rev) {  
   var url = "https://docs.google.com/document/export?format=pdf&id=" + id
  
@@ -183,8 +203,6 @@ function uploader(id, url) {
   }
 }
 
-
-
 // 14 days
 function transfersh_upload(id) {
   var url = 'https://transfer.sh'
@@ -196,7 +214,6 @@ function transfersh_upload(id) {
     return result
   }
 }
-
 
 // long term
 /*
@@ -216,7 +233,6 @@ function anonfilecom_upload(id) {
   }    
 }
 
-
 // ephemeral
 function fileio_upload(id) {
   var url = 'https://file.io'
@@ -231,7 +247,6 @@ function fileio_upload(id) {
   }    
 }
 
-
 // 30 days
 function uploadfilesio_upload(id) {
   var url = "https://up.uploadfiles.io/upload"
@@ -245,4 +260,3 @@ function uploadfilesio_upload(id) {
     return link    
   }
 }
-
