@@ -25,6 +25,7 @@ function check_init() {
 
 
 function update_doc(wiki, force) {
+  console.log("update_doc() in")
   var body = redditlib.get_page(wiki)
   var doc_fullrev = get_fullrev()
   var doc_rev = get_docrev(doc_fullrev)
@@ -57,6 +58,7 @@ function update_doc(wiki, force) {
   var linkstr = get_links_str(links)
   var newbody = get_newpage(linkstr, doc_fullrev)
   var result = redditlib.update_wiki(wiki, newbody)
+  console.log("update_doc() out")
 }
 
 
@@ -122,7 +124,8 @@ function get_newpage(linkstr, fullrev) {
 
 
 function upload(pdf_id) {  
-  var uploads = [anonfilecom_upload, uploadfilesio_upload, transfersh_upload]
+//  var uploads = [anonfilecom_upload, uploadfilesio_upload, transfersh_upload]
+  var uploads = [anonfilecom_upload, uploadfilesio_upload]
   var links = []
   
   for(var i=0; i<uploads.length; i++) {
@@ -193,7 +196,7 @@ function uploader(id, url) {
     'payload' : formData
   };
   
-  var response = redditlib.httpretry(url, options);
+  var response = redditlib.httpretry(url, options, true);
   
   if( response != undefined ) {
     var text = response.getContentText()
