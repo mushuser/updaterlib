@@ -2,9 +2,10 @@ var DOC_FILENAME;
 var DOC_ID;
 var DOC_WIKI;
 var PAGE_HEADER;
+var DOC_SR;
 
-
-function init_project(doc_filename, doc_id, doc_wiki, page_header) {
+function init_project(doc_sr, doc_filename, doc_id, doc_wiki, page_header) {
+  DOC_SR = doc_sr
   DOC_FILENAME = doc_filename
   DOC_ID = doc_id
   DOC_WIKI = doc_wiki
@@ -14,6 +15,7 @@ function init_project(doc_filename, doc_id, doc_wiki, page_header) {
 
 function check_init() {
   if( 
+    (DOC_SR == undefined) ||    
     (DOC_FILENAME == undefined) ||
     (DOC_ID == undefined) ||
     (DOC_WIKI == undefined) ||
@@ -26,7 +28,7 @@ function check_init() {
 
 function update_doc(wiki, force) {
   console.log("update_doc() in")
-  var body = redditlib.get_page(wiki)
+  var body = redditlib.get_page(wiki, DOC_SR)
   var doc_fullrev = get_fullrev()
   var doc_rev = get_docrev(doc_fullrev)
   
@@ -57,7 +59,7 @@ function update_doc(wiki, force) {
   
   var linkstr = get_links_str(links)
   var newbody = get_newpage(linkstr, doc_fullrev)
-  var result = redditlib.update_wiki(wiki, newbody)
+  var result = redditlib.update_wiki(wiki, newbody, DOC_SR)
   console.log("update_doc() out")
 }
 
@@ -124,8 +126,8 @@ function get_newpage(linkstr, fullrev) {
 
 
 function upload(pdf_id) {  
-//  var uploads = [anonfilecom_upload, uploadfilesio_upload, transfersh_upload]
-  var uploads = [anonfilecom_upload, uploadfilesio_upload]
+  var uploads = [anonfilecom_upload, uploadfilesio_upload, transfersh_upload]
+//  var uploads = [anonfilecom_upload, uploadfilesio_upload]
   var links = []
   
   for(var i=0; i<uploads.length; i++) {
@@ -139,7 +141,7 @@ function upload(pdf_id) {
       continue
     } else {
       links.push(link)
-      Utilities.sleep(1000 * 60)    
+      Utilities.sleep(1000 * 30)    
     }
     
   }
@@ -196,7 +198,7 @@ function uploader(id, url) {
     'payload' : formData
   };
   
-  var response = redditlib.httpretry(url, options, true);
+  var response = httplib.httpretry(url, options, true);
   
   if( response != undefined ) {
     var text = response.getContentText()
