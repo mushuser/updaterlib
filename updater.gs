@@ -1,8 +1,10 @@
+var DOC_SR;
 var DOC_FILENAME;
 var DOC_ID;
 var DOC_WIKI;
 var PAGE_HEADER;
-var DOC_SR;
+
+
 
 function init_project(doc_sr, doc_filename, doc_id, doc_wiki, page_header) {
   DOC_SR = doc_sr
@@ -21,7 +23,14 @@ function check_init() {
     (DOC_WIKI == undefined) ||
     (PAGE_HEADER == undefined) 
   ) {
-    console.log("check_init() failed, call init_project()")    
+    var msg = "updaterlib.check_init() failed, call init_project()"
+    console.log("DOC_SR: %s", DOC_SR)
+    console.log("DOC_FILENAME: %s", DOC_FILENAME)
+    console.log("DOC_ID: %s", DOC_ID)
+    console.log("DOC_WIKI: %s", DOC_WIKI)
+    console.log("PAGE_HEADER: %s", PAGE_HEADER)
+//    console.log(msg)
+    throw msg
   }
 }
 
