@@ -5,8 +5,9 @@ var DOC_WIKI;
 var PAGE_HEADER;
 
 var credential;
+var forbidden_words;
 
-function init_project(doc_sr, doc_filename, doc_id, doc_wiki, page_header, creds) {
+function init_project(doc_sr, doc_filename, doc_id, doc_wiki, page_header, creds, f_words) {
   DOC_SR = doc_sr
   DOC_FILENAME = doc_filename
   DOC_ID = doc_id
@@ -14,6 +15,7 @@ function init_project(doc_sr, doc_filename, doc_id, doc_wiki, page_header, creds
   PAGE_HEADER = page_header
   
   credential = creds
+  forbidden_words = f_words
 }
 
 
@@ -39,9 +41,30 @@ function check_init() {
 }
 
 
+function forbidden_check(text, check_list) {
+  for(var i in check_list) {
+    var check = check_list[i]
+    
+    if(text.indexOf(check) > -1) {
+      return false  
+    }
+  }
+  
+  return true
+}
+
+
 function update_doc(wiki, force) {
   console.log("update_doc() in")
+  // the very first thing
+  doc_forbidden_check()
+  
   var body = redditlib.get_page(wiki, DOC_SR, credential)
+  
+  if(forbidden_check(body, forbidden_words) != true) {
+    throw "forbidden_check() failed"  
+  }
+  
   var doc_fullrev = get_fullrev()
   var doc_rev = get_docrev(doc_fullrev)
   
@@ -72,6 +95,9 @@ function update_doc(wiki, force) {
   
   var linkstr = get_links_str(links)
   var newbody = get_newpage(linkstr, doc_fullrev)
+  if(forbidden_check(newbody, forbidden_words) != true) {
+    throw "forbidden_check() failed"  
+  }  
   var result = redditlib.update_wiki(wiki, newbody, DOC_SR, credential)
   console.log("update_doc() out")
 }
@@ -94,6 +120,16 @@ function get_datestr() {
 function get_docrev(fullrev) {
   var rev = fullrev.match(/\[(\d+)\]/)[1]
   return rev
+}
+
+
+function doc_forbidden_check() {
+  var doc = DocumentApp.openById(DOC_ID)
+  var text = doc.getBody().getText().toLowerCase()
+  
+  if(forbidden_check(text, forbidden_words) != true) {
+    throw "forbidden_check() failed"  
+  }  
 }
 
 
