@@ -129,7 +129,9 @@ function doc_forbidden_check() {
   
   if(forbidden_check(text, forbidden_words) != true) {
     throw "forbidden_check() failed"  
-  }  
+  }
+  
+  return true
 }
 
 
