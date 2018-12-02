@@ -60,11 +60,7 @@ function update_doc(wiki, force) {
   doc_forbidden_check()
   
   var body = redditlib.get_page(wiki, DOC_SR, credential)
-  
-  if(forbidden_check(body, forbidden_words) != true) {
-    throw "forbidden_check() failed"  
-  }
-  
+    
   var doc_fullrev = get_fullrev()
   var doc_rev = get_docrev(doc_fullrev)
   
