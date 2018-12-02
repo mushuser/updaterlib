@@ -4,19 +4,22 @@ var DOC_ID;
 var DOC_WIKI;
 var PAGE_HEADER;
 
+var credential;
 
-
-function init_project(doc_sr, doc_filename, doc_id, doc_wiki, page_header) {
+function init_project(doc_sr, doc_filename, doc_id, doc_wiki, page_header, creds) {
   DOC_SR = doc_sr
   DOC_FILENAME = doc_filename
   DOC_ID = doc_id
   DOC_WIKI = doc_wiki
   PAGE_HEADER = page_header
+  
+  credential = creds
 }
 
 
 function check_init() {
   if( 
+    (credential == undefined) ||        
     (DOC_SR == undefined) ||    
     (DOC_FILENAME == undefined) ||
     (DOC_ID == undefined) ||
@@ -24,6 +27,7 @@ function check_init() {
     (PAGE_HEADER == undefined) 
   ) {
     var msg = "updaterlib.check_init() failed, call init_project()"
+    console.log("credential: %s", JSON.stringify(credential))
     console.log("DOC_SR: %s", DOC_SR)
     console.log("DOC_FILENAME: %s", DOC_FILENAME)
     console.log("DOC_ID: %s", DOC_ID)
@@ -37,7 +41,7 @@ function check_init() {
 
 function update_doc(wiki, force) {
   console.log("update_doc() in")
-  var body = redditlib.get_page(wiki, DOC_SR)
+  var body = redditlib.get_page(wiki, DOC_SR, credential)
   var doc_fullrev = get_fullrev()
   var doc_rev = get_docrev(doc_fullrev)
   
@@ -68,7 +72,7 @@ function update_doc(wiki, force) {
   
   var linkstr = get_links_str(links)
   var newbody = get_newpage(linkstr, doc_fullrev)
-  var result = redditlib.update_wiki(wiki, newbody, DOC_SR)
+  var result = redditlib.update_wiki(wiki, newbody, DOC_SR, credential)
   console.log("update_doc() out")
 }
 
