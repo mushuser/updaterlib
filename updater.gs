@@ -54,6 +54,28 @@ function forbidden_check(text, check_list) {
 }
 
 
+function validate_anonfile_uploaded(links, pdf_size) {
+  for(var i in links) {
+    var link = links[i]
+    var m = link.match(/anonfile.com\/(\w*)/)
+    if(m != null) {
+      var id = m[1]
+      var url = "https://anonfile.com/api/v2/file/" + id + "/info"
+      var text = httplib.httpretry(url)
+      
+      var json = JSON.parse(text)
+      
+      if((json.status == true) && (json.data.file.metadata.size.bytes == pdf_size)) {
+        return true  
+      }
+    }
+  }
+  
+  
+  return false
+}
+
+
 function update_doc(wiki, force) {
   console.log("update_doc() in")
   // the very first thing
@@ -79,14 +101,23 @@ function update_doc(wiki, force) {
   }
 
   var pdf_id = save_pdf(DOC_ID, doc_rev)
-  
+ 
   var links = upload(pdf_id)
-  DriveApp.getFileById(pdf_id).setTrashed(true)
+  var pdf = DriveApp.getFileById(pdf_id)
+  var pdf_size = pdf.getSize()
+  
+  pdf.setTrashed(true)
   
   if( links.length < 1 ) {
     var msg = "all uploads failed!"
     console.log(msg)
     throw msg
+  }
+  
+  if(validate_anonfile_uploaded(links, pdf_size) == false) {
+    throw "anonfile uploaded failed"  
+  } else {
+    console.log("anonfile uploaded ok")  
   }
   
   var linkstr = get_links_str(links)
