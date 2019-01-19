@@ -183,7 +183,7 @@ function get_fullrev() {
 
 function get_guiderev(fullrev) {
   var rev = fullrev.match(/\[(\d+)\]/)[1]
-  return rev
+  return parseInt(rev)
 }
 
 
@@ -191,7 +191,7 @@ function get_redditrev(body) {
   var m = body.match(/\[(\d+)\]/)
   var rev = m[1]
   
-  return rev
+  return parseInt(rev)
 }
 
 
