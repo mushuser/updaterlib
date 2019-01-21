@@ -86,18 +86,20 @@ function update_doc(wiki, force) {
   var doc_fullrev = get_fullrev()
   var doc_rev = get_docrev(doc_fullrev)
   
-  console.log("doc_rev=" + doc_rev)
+  console.log("doc_rev: %d", doc_rev)
 
   if( force == undefined ) {
     var reddit_rev = get_redditrev(body)
-    console.log("reddit_rev=" + reddit_rev)
+    console.log("reddit_rev: %d", reddit_rev)
     
     if(doc_rev <= reddit_rev) {
       console.log("latest rev on reddit, exiting!")
       return        
-    }
+    } else {
+      console.log("updating to doc_rev: %d", doc_rev)
+    }    
   } else {
-    console.log("force to upload")      
+    console.log("force updating to doc_rev: %d", doc_rev)
   }
 
   var pdf_id = save_pdf(DOC_ID, doc_rev)
@@ -252,8 +254,9 @@ function get_revdes(DOC_ID) {
 
 function save_pdf(id, rev) {  
   var url = "https://docs.google.com/document/export?format=pdf&id=" + id
- 
-  var blob = UrlFetchApp.fetch(url).getBlob();
+  
+  var response = httplib.httpretry(url)
+  var blob = response.getBlob();
   var file = DriveApp.createFile(blob)
   var name = DOC_FILENAME + "_v" + rev + ".pdf"
   file.setName(name)
