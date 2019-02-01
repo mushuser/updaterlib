@@ -46,7 +46,7 @@ function forbidden_check(text, check_list) {
     var check = check_list[i]
     
     if(text.indexOf(check) > -1) {
-      return false  
+      return check  
     }
   }
   
@@ -156,8 +156,9 @@ function doc_forbidden_check() {
   var doc = DocumentApp.openById(DOC_ID)
   var text = doc.getBody().getText().toLowerCase()
   
-  if(forbidden_check(text, forbidden_words) != true) {
-    throw "forbidden_check() failed"  
+  var check = forbidden_check(text, forbidden_words)
+  if( check!= true) {
+    throw "forbidden_check() failed:" + check
   }
   
   return true
