@@ -7,15 +7,16 @@ var PAGE_HEADER;
 var credential;
 var forbidden_words;
 
-function init_project(doc_sr, doc_filename, doc_id, doc_wiki, page_header, creds, f_words) {
-  DOC_SR = doc_sr
-  DOC_FILENAME = doc_filename
-  DOC_ID = doc_id
-  DOC_WIKI = doc_wiki
-  PAGE_HEADER = page_header
+//function init_project(doc_sr, doc_filename, doc_id, doc_wiki, page_header, creds, f_words) {
+function init_project(params) {
+  DOC_SR = params.doc_sr
+  DOC_FILENAME = params.doc_filename
+  DOC_ID = params.doc_id
+  DOC_WIKI = params.doc_wiki
+  PAGE_HEADER = params.page_header
   
-  credential = creds
-  forbidden_words = f_words
+  credential = params.creds_wikibot
+  forbidden_words = params.forbidden_words
 }
 
 
@@ -207,8 +208,8 @@ function get_newpage(linkstr, fullrev) {
 
 
 function upload(pdf_id) {  
-  var uploads = [anonfilecom_upload, uploadfilesio_upload, transfersh_upload]
-//  var uploads = [anonfilecom_upload, uploadfilesio_upload]
+//  var uploads = [anonfilecom_upload, uploadfilesio_upload, transfersh_upload]
+  var uploads = [anonfilecom_upload]
   var links = []
   
   for(var i=0; i<uploads.length; i++) {
@@ -222,7 +223,7 @@ function upload(pdf_id) {
       continue
     } else {
       links.push(link)
-      Utilities.sleep(1000 * 30)    
+      Utilities.sleep(100 * 1)    
     }
     
   }
@@ -286,6 +287,7 @@ function uploader(id, url) {
     var text = response.getContentText()
     return text
   } else {
+    console.log("failed: %s", url)
     return undefined 
   }
 }
