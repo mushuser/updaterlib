@@ -349,3 +349,16 @@ function uploadfilesio_upload(id) {
     return link    
   }
 }
+
+var next_pdf_id = "next_pdf_id"
+var next_uploader = "next_uploader"
+var upload_ids = "upload_ids"
+
+function add_trigger(uploader, timems) {
+  var spro = PropertiesService.getScriptProperties();
+
+  ScriptApp.newTrigger("next_upload")
+  .timeBased()
+  .after(10 * 1000)
+  .create();
+}
