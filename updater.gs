@@ -19,6 +19,7 @@ function init_project(params) {
   forbidden_words = params.forbidden_words
 }
 
+var spro = PropertiesService.getUserProperties();
 
 function check_init() {
   if( 
@@ -76,6 +77,161 @@ function validate_anonfile_uploaded(links, pdf_size) {
   return false
 }
 
+var next_pdf_id = "next_pdf_id"
+var next_uploader = "next_uploader"
+var uploaded_links = "uploaded_links"
+
+function update_doc_main(wiki, force) {
+  console.log("update_doc_main() in")
+  // the very first thing
+  doc_forbidden_check()
+  
+  var body = redditlib.get_page(wiki, DOC_SR, credential)
+    
+  var rev_history = get_docrev_history()
+  var doc_rev = get_docrev(rev_history)
+  
+  console.log("doc_rev: %d", doc_rev)
+
+  if( force == undefined ) {
+    var reddit_rev = get_redditrev(body)
+    console.log("reddit_rev: %d", reddit_rev)
+    
+    if(doc_rev <= reddit_rev) {
+      console.log("latest rev on reddit, exiting!")
+      return        
+    } else {
+      console.log("updating to doc_rev: %d", doc_rev)
+    }    
+  } else {
+    console.log("force updating to doc_rev: %d", doc_rev)
+  } 
+  
+  var pdf_id = save_pdf(DOC_ID, doc_rev)
+  spro.setProperty(next_pdf_id, pdf_id)  
+  console.log("next_pdf_id: %s", pdf_id)
+  
+  var uploaders = ["anonfilecom_upload", "uploadfilesio_upload", "transfersh_upload"]
+  spro.setProperty(next_uploader, uploaders.join(","))  
+  console.log("next_uploader: %s", uploaders)
+  
+  //uploaded_links
+  spro.deleteProperty(uploaded_links)
+  
+  console.log("next_upload trigger from update_doc_main()")
+  ScriptApp.newTrigger(next_upload_execution)
+  .timeBased()
+  .after(trigger_duration_1)
+  .create();
+}
+
+var trigger_duration_1 = 1000 //60 * 1000 * 2
+var trigger_duration_2 = 60 * 1000 * 5
+
+var next_upload_execution = "updaterlib.next_upload"
+
+
+
+function next_upload() {
+  console.log("next_upload() start")
+
+  var uploaders_ = spro.getProperty(next_uploader)
+  if(uploaders_ == null) {
+    throw "uploaders_ == null"
+  } else {
+    var uploaders = uploaders_.split(",")  
+  }
+  console.log("uploaders: %s", uploaders)
+  
+  var pdf_id = spro.getProperty(next_pdf_id)
+  console.log("pdf_id: %s", pdf_id)
+
+  var links_ = spro.getProperty(uploaded_links)
+  if(links_ == null) {
+    var links = []
+  } else {
+    var links = links_.split(",")  
+  }  
+  console.log("links: %s", links)
+  
+  if(uploaders.length > 0) {
+    var uploader = uploaders.pop()
+    var new_next_uploader = uploaders.join(",")
+    console.log("new_next_uploader: %s", new_next_uploader)
+    spro.setProperty(next_uploader, new_next_uploader) 
+    
+    var link = ""
+    var evalstr = Utilities.formatString("link = %s(\"%s\")", uploader, pdf_id)
+    console.log(evalstr)
+    eval(evalstr)
+    console.log("link: %s", link)
+    
+    // no retry, on uploader failed
+
+    if(link != undefined) { 
+      links.push(link)
+      spro.setProperty(uploaded_links, links.join(",")) 
+      
+      console.log("uploaded_links: %s", links)  
+    }    
+
+    if(uploaders.length > 0) {
+      console.log("next_upload trigger from next_upload(): %s", uploaders)
+      
+      ScriptApp.newTrigger(next_upload_execution)
+      .timeBased()
+      .after(trigger_duration_1)
+      .create();
+    } else {
+      console.log("update_doc_final()")
+      update_doc_final(links, pdf_id)      
+    }
+  } 
+  
+//  else {
+//    if(pdf_id == "") {
+//      // everything done
+//      //deleteTrigger
+//      console.log("done!!!")
+//      return
+//    } else {
+//      // update doc
+//      console.log("update_doc_final()")
+//      update_doc_final(links, pdf_id)
+//    }
+//  }
+}
+
+
+function update_doc_final(links, pdf_id) {
+  console.log("update_doc_final() in: %s, %s", links, pdf_id)
+  var pdf = DriveApp.getFileById(pdf_id)
+  var pdf_size = pdf.getSize()
+  
+  pdf.setTrashed(true)
+  
+  if( links.length < 1 ) {
+    var msg = "all uploads failed!"
+    console.log(msg)
+    throw msg
+  }
+  
+  if(validate_anonfile_uploaded(links, pdf_size) == false) {
+    throw "anonfile uploaded failed"  
+  } else {
+    console.log("anonfile uploaded ok")  
+  }
+  var rev_history = get_docrev_history()
+  var linkstr = get_links_str(links)
+  var newbody = get_newpage(linkstr, rev_history)
+  if(forbidden_check(newbody, forbidden_words) != true) {
+    throw "forbidden_check() failed"  
+  }  
+  
+  var result = redditlib.update_wiki(DOC_WIKI, newbody, DOC_SR, credential)
+  console.log("update_doc_final() out")
+}  
+
 
 function update_doc(wiki, force) {
   console.log("update_doc() in")
@@ -84,8 +240,8 @@ function update_doc(wiki, force) {
   
   var body = redditlib.get_page(wiki, DOC_SR, credential)
     
-  var doc_fullrev = get_fullrev()
-  var doc_rev = get_docrev(doc_fullrev)
+  var rev_history = get_docrev_history()
+  var doc_rev = get_docrev(rev_history)
   
   console.log("doc_rev: %d", doc_rev)
 
@@ -124,7 +280,7 @@ function update_doc(wiki, force) {
   }
   
   var linkstr = get_links_str(links)
-  var newbody = get_newpage(linkstr, doc_fullrev)
+  var newbody = get_newpage(linkstr, doc_rev)
   if(forbidden_check(newbody, forbidden_words) != true) {
     throw "forbidden_check() failed"  
   }  
@@ -147,12 +303,6 @@ function get_datestr() {
 }
 
 
-function get_docrev(fullrev) {
-  var rev = fullrev.match(/\[(\d+)\]/)[1]
-  return rev
-}
-
-
 function doc_forbidden_check() {
   var doc = DocumentApp.openById(DOC_ID)
   var text = doc.getBody().getText().toLowerCase()
@@ -166,28 +316,33 @@ function doc_forbidden_check() {
 }
 
 
-function get_fullrev() {
+function get_docrev_history() {
   var doc = DocumentApp.openById(DOC_ID)
   var b0 = (doc.getBookmarks())[0]
   var nextsb = b0.getPosition().getSurroundingText().getNextSibling()
-  var fullrev = ""
+  var history = ""
   
   for(var i=0; nextsb != null ;i++) {
     var nexttext = nextsb.asText().getText()
     if( nexttext == "" ) {
       nexttext = "\n\n"  
     }
-    fullrev = fullrev + nexttext
+    history = history + nexttext
     nextsb = nextsb.getNextSibling()  
   }
-  
-  return fullrev
+
+  return history
 }
 
 
-function get_guiderev(fullrev) {
-  var rev = fullrev.match(/\[(\d+)\]/)[1]
-  return parseInt(rev)
+function get_docrev(docrev_history) {
+  var rev = docrev_history.match(/\[(\d+)\]/)[1]
+  
+  if(rev == undefined) {
+    return undefined
+  } else {  
+    return parseInt(rev)
+  }  
 }
 
 
@@ -199,9 +354,9 @@ function get_redditrev(body) {
 }
 
 
-function get_newpage(linkstr, fullrev) {
+function get_newpage(linkstr, doc_rev_history) {
   var header = PAGE_HEADER
-  var body = header + linkstr + "***\n\n" + fullrev
+  var body = header + linkstr + "***\n\n" + doc_rev_history
   
   return body
 }
@@ -255,6 +410,7 @@ function get_revdes(DOC_ID) {
 
 
 function save_pdf(id, rev) {  
+  console.log("save_pdf(): %s, %s", id, rev)
   var url = "https://docs.google.com/document/export?format=pdf&id=" + id
   
   var response = httplib.httpretry(url)
@@ -322,6 +478,7 @@ function anonfilecom_upload(id) {
   }    
 }
 
+
 // ephemeral
 function fileio_upload(id) {
   var url = 'https://file.io'
@@ -348,17 +505,4 @@ function uploadfilesio_upload(id) {
     console.log(link)
     return link    
   }
-}
-
-var next_pdf_id = "next_pdf_id"
-var next_uploader = "next_uploader"
-var upload_ids = "upload_ids"
-
-function add_trigger(uploader, timems) {
-  var spro = PropertiesService.getScriptProperties();
-
-  ScriptApp.newTrigger("next_upload")
-  .timeBased()
-  .after(10 * 1000)
-  .create();
 }
