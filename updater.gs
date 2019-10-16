@@ -81,8 +81,8 @@ var next_pdf_id = "next_pdf_id"
 var next_uploader = "next_uploader"
 var uploaded_links = "uploaded_links"
 
-function update_doc_main(wiki, force) {
-  console.log("update_doc_main() in")
+function update_doc(wiki, force) {
+  console.log("update_doc() in")
   // the very first thing
   doc_forbidden_check()
   
@@ -118,7 +118,7 @@ function update_doc_main(wiki, force) {
   //uploaded_links
   spro.deleteProperty(uploaded_links)
   
-  console.log("next_upload trigger from update_doc_main()")
+  console.log("next_upload trigger from update_doc()")
   ScriptApp.newTrigger(next_upload_execution)
   .timeBased()
   .after(trigger_duration_1)
@@ -229,64 +229,16 @@ function update_doc_final(links, pdf_id) {
   }  
   
   var result = redditlib.update_wiki(DOC_WIKI, newbody, DOC_SR, credential)
+  //
+  
+  console.log("clear_outdated_trigger()")
+  ScriptApp.newTrigger("clear_outdated_trigger")
+  .timeBased()
+  .after(trigger_duration_1)
+  .create();
+  
   console.log("update_doc_final() out")
 }  
-
-
-function update_doc(wiki, force) {
-  console.log("update_doc() in")
-  // the very first thing
-  doc_forbidden_check()
-  
-  var body = redditlib.get_page(wiki, DOC_SR, credential)
-    
-  var rev_history = get_docrev_history()
-  var doc_rev = get_docrev(rev_history)
-  
-  console.log("doc_rev: %d", doc_rev)
-
-  if( force == undefined ) {
-    var reddit_rev = get_redditrev(body)
-    console.log("reddit_rev: %d", reddit_rev)
-    
-    if(doc_rev <= reddit_rev) {
-      console.log("latest rev on reddit, exiting!")
-      return        
-    } else {
-      console.log("updating to doc_rev: %d", doc_rev)
-    }    
-  } else {
-    console.log("force updating to doc_rev: %d", doc_rev)
-  }
-
-  var pdf_id = save_pdf(DOC_ID, doc_rev)
- 
-  var links = upload(pdf_id)
-  var pdf = DriveApp.getFileById(pdf_id)
-  var pdf_size = pdf.getSize()
-  
-  pdf.setTrashed(true)
-  
-  if( links.length < 1 ) {
-    var msg = "all uploads failed!"
-    console.log(msg)
-    throw msg
-  }
-  
-  if(validate_anonfile_uploaded(links, pdf_size) == false) {
-    throw "anonfile uploaded failed"  
-  } else {
-    console.log("anonfile uploaded ok")  
-  }
-  
-  var linkstr = get_links_str(links)
-  var newbody = get_newpage(linkstr, doc_rev)
-  if(forbidden_check(newbody, forbidden_words) != true) {
-    throw "forbidden_check() failed"  
-  }  
-  var result = redditlib.update_wiki(wiki, newbody, DOC_SR, credential)
-  console.log("update_doc() out")
-}
 
 
 function get_datestr() {
@@ -466,7 +418,7 @@ Files older than 36 months which has not been downloaded for 24 months.
 Files older than 30 days which has never been downloaded at all.
 */
 function anonfilecom_upload(id) {
-  var url = 'https://anonfile.com/api/upload'
+  var url = 'https://api.anonfile.com/upload'
   var result = uploader(id, url)
   if( result == undefined ) {
     return undefined
