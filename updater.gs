@@ -107,6 +107,11 @@ function update_doc(wiki, force) {
     console.log("force updating to doc_rev: %d", doc_rev)
   } 
   
+  var doc = DocumentApp.openById(DOC_ID)
+  if(!check_pubkey(doc)) {
+    throw "pubkey check failed"  
+  }
+  
   var pdf_id = save_pdf(DOC_ID, doc_rev)
   spro.setProperty(next_pdf_id, pdf_id)  
   console.log("next_pdf_id: %s", pdf_id)
@@ -268,10 +273,60 @@ function doc_forbidden_check() {
 }
 
 
+function get_bookmark_p(doc, text) {
+  var bms = doc.getBookmarks()
+  
+  for(var i in bms) {
+    var bm = bms[i]
+    var p = bm.getPosition()
+    var t = p.getSurroundingText().asText().getText()
+
+    if(t == text) {
+        return p
+    }
+  }
+  
+  return undefined
+}
+
+function get_doctext_p(position, doubleNL, end, skipFirst) {
+  var texts = ""
+  var np = position
+  
+  var next_t = position.getSurroundingText()
+  
+  if(skipFirst) {
+    next_t = next_t.asText().getNextSibling()
+  }
+  
+  for(var i=0; next_t!=null; i++) {
+    var next_text = next_t.asText().getText()
+  
+    if(end == next_text) {
+      return texts+end
+    }
+    
+    if(doubleNL) {
+      if(next_text == "") {
+        next_text = "\n\n"  
+      }
+    } else {
+      next_text += "\n"  
+    }
+    texts = texts + next_text
+    next_t = next_t.asText().getNextSibling()  
+  }
+
+  return texts
+}
+
 function get_docrev_history() {
   var doc = DocumentApp.openById(DOC_ID)
-  var b0 = (doc.getBookmarks())[0]
-  var nextsb = b0.getPosition().getSurroundingText().getNextSibling()
+  var p = get_bookmark_p(doc, "文件更新明細")
+  
+  
+  return get_doctext_p(p, true, undefined, true)
+  
   var history = ""
   
   for(var i=0; nextsb != null ;i++) {
@@ -285,6 +340,7 @@ function get_docrev_history() {
 
   return history
 }
+
 
 
 function get_docrev(docrev_history) {
@@ -457,4 +513,11 @@ function uploadfilesio_upload(id) {
     console.log(link)
     return link    
   }
+}
+
+function check_pubkey(doc) {
+  var p = get_bookmark_p(doc, "-----BEGIN PGP PUBLIC KEY BLOCK-----")
+  var t = get_doctext_p(p, false, "-----END PGP PUBLIC KEY BLOCK-----",false)
+  
+  return (secret.protonmail_key == t)   
 }
